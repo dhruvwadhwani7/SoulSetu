@@ -1,263 +1,364 @@
 import React, { useEffect, useRef } from 'react';
 import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
   Animated,
   Dimensions,
-  StyleSheet,
-  Text,
-  View,
-  Pressable,
-  ScrollView,
-  ToastAndroid,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'expo-router';
+import { stats, recentMatches, quickActions, recentActivity } from '@/app/data/data';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-export default function MainScreen() {
-  const router = useRouter();
+export default function HomeDashboard() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
-  const { isLoggedIn } = useAuth();
+  const router = useRouter();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const doodles = useRef(
-    new Array(10).fill(0).map(() => ({
-      x: Math.random() * (width - 40),
-      anim: new Animated.Value(Math.random() * 1),
-      delay: Math.random() * 1000,
-      size: 18 + Math.random() * 20,
-      scale: 0.7 + Math.random() * 0.6,
-    }))
-  ).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
-  // Animations
   useEffect(() => {
-    doodles.forEach((d) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(d.anim, {
-            toValue: 1,
-            duration: 2000 + Math.random() * 1000,
-            delay: d.delay,
-            useNativeDriver: true,
-          }),
-          Animated.timing(d.anim, {
-            toValue: 0,
-            duration: 2000 + Math.random() * 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    });
-
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1500,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
-  // Redirect if not logged in
-  useEffect(() => {
-    if (!isLoggedIn) {
-      ToastAndroid.show('Please log in first', ToastAndroid.SHORT);
-      router.replace('/login');
-    }
-  }, [isLoggedIn]);
-
-  const handleProtectedPress = (route: string) => {
-    if (!isLoggedIn) {
-      ToastAndroid.show('Please log in first', ToastAndroid.SHORT);
-      router.replace('/login');
-      return;
-    }
-    router.push(route);
-  };
-
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        { backgroundColor: theme.background, opacity: fadeAnim },
-      ]}
+    <ScrollView 
+      style={[styles.container, { backgroundColor: theme.background }]}
+      showsVerticalScrollIndicator={false}
     >
-      {/* Floating doodles */}
-      {doodles.map((d, i) => {
-        const translateY = d.anim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, -25 - Math.random() * 25],
-        });
-        const opacity = d.anim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.5, 1],
-        });
-
-        return (
-          <Animated.View
-            key={i}
-            style={[
-              styles.doodle,
-              {
-                left: d.x,
-                transform: [{ translateY }, { scale: d.scale }],
-                opacity,
-              },
-            ]}
-          >
-            <IconSymbol
-              name={i % 2 === 0 ? 'heart.fill' : 'sparkles'}
-              size={d.size}
-              color={theme.tint}
-            />
-          </Animated.View>
-        );
-      })}
-
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.text }]}>SoulSetu</Text>
-        <Pressable onPress={() => handleProtectedPress('/(tabs)/profile')}>
-          <IconSymbol name="person.crop.circle" size={32} color={theme.tint} />
+      <Animated.View 
+        style={[
+          styles.header,
+          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+        ]}
+      >
+        <View>
+          <Text style={[styles.greeting, { color: theme.text }]}>Hello, Dhruv! 👋</Text>
+          <Text style={[styles.subGreeting, { color: theme.text + '80' }]}>
+            Welcome back to Soul Setu
+          </Text>
+        </View>
+        <Pressable style={[styles.notificationBtn, { backgroundColor: theme.tint + '15' }]}>
+          <IconSymbol name="bell.fill" size={22} color={theme.tint} />
+          <View style={[styles.badge, { backgroundColor: '#FF6B6B' }]} />
         </Pressable>
+      </Animated.View>
+
+      {/* Stats Cards */}
+      <View style={styles.statsContainer}>
+        {stats.map((stat, index) => (
+          <Animated.View
+            key={stat.label}
+            style={[styles.statCard, { 
+              backgroundColor: theme.tint + '12',
+              opacity: fadeAnim,
+              transform: [{
+                translateY: slideAnim.interpolate({
+                  inputRange: [0, 30],
+                  outputRange: [0, 30 + index * 10],
+                })
+              }]
+            }]}
+          >
+            <View style={[styles.statIconContainer, { backgroundColor: stat.color + '20' }]}>
+              <IconSymbol name={stat.icon} size={24} color={stat.color} />
+            </View>
+            <Text style={[styles.statValue, { color: theme.text }]}>{stat.value}</Text>
+            <Text style={[styles.statLabel, { color: theme.text + '80' }]}>{stat.label}</Text>
+          </Animated.View>
+        ))}
       </View>
 
-      {/* Main content */}
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+      {/* Quick Actions */}
+      <View style={styles.section}>
+  <Text style={[styles.sectionTitle, { color: theme.text }]}>Quick Actions</Text>
+  
+  <ScrollView 
+    horizontal 
+    showsHorizontalScrollIndicator={false} 
+    contentContainerStyle={{ gap: 12 }}
+  >
+    {quickActions.map((action) => (
+      <Pressable
+        key={action.title}
+        style={({ pressed }) => [
+          styles.quickActionCard,
+          { 
+            backgroundColor: theme.tint + '15',
+            transform: [{ scale: pressed ? 0.95 : 1 }]
+          }
+        ]}
+        onPress={() => router.push(`/(tabs)/${action.route}`)}
       >
-        <Text style={[styles.welcome, { color: theme.text }]}>Welcome Back!</Text>
-        <Text style={[styles.subtitle, { color: theme.tint }]}>
-          Connect • Chat • Explore ❤️
-        </Text>
-
-        <View style={styles.cardContainer}>
-          {/* Explore */}
-          <View style={[styles.card, { backgroundColor: theme.tint + '15' }]}>
-            <IconSymbol name="safari" size={36} color={theme.tint} />
-            <Text style={[styles.cardTitle, { color: theme.text }]}>
-              Explore Matches
-            </Text>
-            <Text style={[styles.cardText, { color: theme.text + '99' }]}>
-              Find people who vibe with your soul.
-            </Text>
-            <Pressable
-              style={[styles.cardButton, { backgroundColor: theme.tint }]}
-              onPress={() => handleProtectedPress('/(tabs)/explore')}
-            >
-              <Text style={styles.cardButtonText}>Explore</Text>
-            </Pressable>
-          </View>
-
-          {/* Chat */}
-          <View style={[styles.card, { backgroundColor: theme.tint + '15' }]}>
-            <IconSymbol name="message.fill" size={36} color={theme.tint} />
-            <Text style={[styles.cardTitle, { color: theme.text }]}>
-              Chats
-            </Text>
-            <Text style={[styles.cardText, { color: theme.text + '99' }]}>
-              Start conversations that matter.
-            </Text>
-            <Pressable
-              style={[styles.cardButton, { backgroundColor: theme.tint }]}
-              onPress={() => handleProtectedPress('/(tabs)/chat')}
-            >
-              <Text style={styles.cardButtonText}>Open Chats</Text>
-            </Pressable>
-          </View>
-
-          {/* Likes */}
-          <View style={[styles.card, { backgroundColor: theme.tint + '15' }]}>
-            <IconSymbol name="heart.fill" size={36} color={theme.tint} />
-            <Text style={[styles.cardTitle, { color: theme.text }]}>Likes</Text>
-            <Text style={[styles.cardText, { color: theme.text + '99' }]}>
-              See who’s liked your profile.
-            </Text>
-            <Pressable
-              style={[styles.cardButton, { backgroundColor: theme.tint }]}
-              onPress={() => handleProtectedPress('/(tabs)/likes')}
-            >
-              <Text style={styles.cardButtonText}>View Likes</Text>
-            </Pressable>
-          </View>
+        <View style={[styles.quickActionIcon, { backgroundColor: theme.tint + '25' }]}>
+          <IconSymbol name={action.icon} size={28} color={theme.tint} />
         </View>
-      </ScrollView>
-    </Animated.View>
+        <Text style={[styles.quickActionText, { color: theme.text }]}>{action.title}</Text>
+      </Pressable>
+    ))}
+  </ScrollView>
+</View>
+
+      {/* Recent Matches */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Matches</Text>
+          <Pressable onPress={() => router.push('/(tabs)/explore')}>
+            <Text style={[styles.seeAll, { color: theme.tint }]}>See All →</Text>
+          </Pressable>
+        </View>
+        
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {recentMatches.map((match, index) => (
+            <Pressable key={index} style={[styles.matchCard, { backgroundColor: theme.tint + '12' }]}>
+              <View style={styles.matchImageContainer}>
+                <Text style={styles.matchImage}>{match.image}</Text>
+                <View style={[styles.matchBadge, { backgroundColor: '#4ECDC4' }]}>
+                  <Text style={styles.matchPercent}>{match.match}%</Text>
+                </View>
+              </View>
+              <View style={styles.matchInfo}>
+                <Text style={[styles.matchName, { color: theme.text }]}>{match.name}, {match.age}</Text>
+                <View style={styles.matchLocation}>
+                  <IconSymbol name="location.fill" size={12} color={theme.tint} />
+                  <Text style={[styles.matchDistance, { color: theme.text + '80' }]}>{match.distance}</Text>
+                </View>
+              </View>
+              <Pressable style={[styles.matchButton, { backgroundColor: theme.tint }]}>
+                <IconSymbol name="heart.fill" size={16} color="#fff" />
+              </Pressable>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Recent Activity */}
+      <View style={[styles.section, styles.lastSection]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Activity</Text>
+        {recentActivity.map((activity, idx) => (
+          <View key={idx} style={[styles.activityCard, { backgroundColor: theme.tint + '08' }]}>
+            <View style={[styles.activityIcon, { backgroundColor: activity.iconColor + '30' }]}>
+              <IconSymbol name={activity.icon} size={20} color={activity.iconColor} />
+            </View>
+            <View style={styles.activityContent}>
+              <Text style={[styles.activityText, { color: theme.text }]}>{activity.text}</Text>
+              <Text style={[styles.activityTime, { color: theme.text + '60' }]}>{activity.time}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
-  },
-  doodle: {
-    position: 'absolute',
-    top: Math.random() * (height * 0.7),
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 60,
-    alignItems: 'center',
+    paddingBottom: 20,
   },
-  title: {
-    fontSize: 30,
+  greeting: {
+    fontSize: 28,
     fontWeight: '800',
-    letterSpacing: 1,
+    marginBottom: 4,
   },
-  content: {
-    alignItems: 'center',
-    paddingTop: 30,
-    paddingBottom: 80,
-  },
-  welcome: {
-    fontSize: 26,
-    fontWeight: '700',
-  },
-  subtitle: {
-    fontSize: 16,
-    marginTop: 6,
-    opacity: 0.8,
-  },
-  cardContainer: {
-    marginTop: 30,
-    width: '90%',
-    gap: 20,
-  },
-  card: {
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: 10,
-  },
-  cardText: {
+  subGreeting: {
     fontSize: 15,
-    textAlign: 'center',
-    marginTop: 6,
+    fontWeight: '500',
+  },
+  notificationBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    gap: 12,
+    marginBottom: 24,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+  },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  cardButton: {
-    borderRadius: 25,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
+  statValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 4,
   },
-  cardButtonText: {
-    color: '#fff',
+  statLabel: {
+    fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
+  },
+  lastSection: {
+    marginBottom: 100,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 16,
+  },
+  seeAll: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickActionCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+  },
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  quickActionText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  matchCard: {
+    width: 160,
+    borderRadius: 20,
+    padding: 16,
+    marginRight: 12,
+  },
+  matchImageContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  matchImage: {
+    fontSize: 64,
+  },
+  matchBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  matchPercent: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  matchInfo: {
+    marginBottom: 12,
+  },
+  matchName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  matchLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  matchDistance: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  matchButton: {
+    width: '100%',
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  activityCard: {
+    flexDirection: 'row',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  activityIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  activityContent: {
+    flex: 1,
+  },
+  activityText: {
     fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  activityTime: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
