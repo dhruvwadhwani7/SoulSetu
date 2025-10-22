@@ -1,9 +1,11 @@
-import { Colors } from '@/constants/theme';
+import { Button } from '@/components/Button';
+import { ThemedView } from '@/components/ui/ThemedView';
+import { Colors } from '@/constants/colors';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { signInWithEmail, signInWithGoogle } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function Login() {
   const router = useRouter();
@@ -32,7 +34,7 @@ export default function Login() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <ThemedView style={styles.container}>
       <Text style={[styles.brand, { color: theme.text }]}>SOUL SETU</Text>
 
       <View style={styles.form}>
@@ -54,15 +56,18 @@ export default function Login() {
           secureTextEntry
         />
 
-        <Pressable style={[styles.button, { backgroundColor: theme.tint }]} onPress={onLogin}>
-          <Text style={styles.buttonText}>Log In</Text>
-        </Pressable>
+        <Button 
+          title="Log In"
+          onPress={onLogin}
+        />
 
-        <Pressable onPress={onGoogleLogin}>
-          <Text style={[styles.link, { color: theme.tint }]}>Continue with Google</Text>
-        </Pressable>
+        <Button 
+          title="Continue with Google"
+          variant="secondary"
+          onPress={onGoogleLogin}
+        />
       </View>
-    </View>
+    </ThemedView>
   );
 }
 
