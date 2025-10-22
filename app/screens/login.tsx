@@ -1,8 +1,9 @@
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { signInWithEmail, signInWithGoogle } from '@/lib/auth';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function Login() {
   const router = useRouter();
@@ -12,9 +13,22 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const onLogin = () => {
-    // TODO: wire up Supabase auth. For now replace to tabs after "login"
-    router.replace('/(tabs)');
+  const onLogin = async () => {
+    try {
+      await signInWithEmail(email, password);
+      router.replace('/(tabs)');
+    } catch (error) {
+      Alert.alert('Error', (error as Error).message);
+    }
+  };
+
+  const onGoogleLogin = async () => {
+    try {
+      await signInWithGoogle();
+      router.replace('/(tabs)');
+    } catch (error) {
+      Alert.alert('Error', (error as Error).message);
+    }
   };
 
   return (
@@ -44,8 +58,8 @@ export default function Login() {
           <Text style={styles.buttonText}>Log In</Text>
         </Pressable>
 
-        <Pressable onPress={() => router.push('/screens/signup')}>
-          <Text style={[styles.link, { color: theme.tint }]}>Create an account</Text>
+        <Pressable onPress={onGoogleLogin}>
+          <Text style={[styles.link, { color: theme.tint }]}>Continue with Google</Text>
         </Pressable>
       </View>
     </View>
@@ -86,5 +100,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
     fontWeight: '600',
+  },
+  googleButton: {
+    height: 48,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
 });

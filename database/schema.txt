@@ -1,0 +1,54 @@
+-- Users table
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  full_name TEXT NOT NULL,
+  dob DATE NOT NULL,
+  gender TEXT NOT NULL,
+  preferred_genders TEXT[],
+  socialization_type TEXT,
+  profile_pictures TEXT[],
+  emojis TEXT[],
+  bio TEXT,
+  interests TEXT[],
+  music_taste TEXT,
+  smoking_habit TEXT,
+  drinking_habit TEXT,
+  fitness_level TEXT,
+  location TEXT,
+  zodiac_sign TEXT,
+  relationship_status TEXT,
+  caste TEXT,
+  religion TEXT,
+  dietary_preferences TEXT,
+  prompt1 TEXT,
+  prompt2 TEXT,
+  prompt3 TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Likes table
+CREATE TABLE likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  from_user UUID REFERENCES users(id),
+  to_user UUID REFERENCES users(id),
+  liked_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Matches table
+CREATE TABLE matches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_a UUID REFERENCES users(id),
+  user_b UUID REFERENCES users(id),
+  matched_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Messages table
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  match_id UUID REFERENCES matches(id),
+  sender_id UUID REFERENCES users(id),
+  receiver_id UUID REFERENCES users(id),
+  content TEXT,
+  sent_at TIMESTAMP DEFAULT NOW()
+);
